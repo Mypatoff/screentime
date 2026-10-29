@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Screen Time — {{ title }}</title>
+<style>
+  :root {
+    --page:        #0d0d0d;
+    --surface:     #1a1a19;
+    --ink:         #ffffff;
+    --ink-secondary: #c3c2b7;
+    --ink-muted:   #898781;
+    --gridline:    #2c2c2a;
+    --baseline:    #383835;
+    --border:      rgba(255,255,255,0.10);
+    --accent:      #3987e5;
+    --accent-dim:  #1c5cab;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2.5rem 1.25rem 4rem;
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+
+  h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink-secondary);
+    margin: 0 0 1.5rem;
+    letter-spacing: 0.01em;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .tabs a {
+    text-decoration: none;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--ink-secondary);
+    border: 1px solid var(--border);
+  }
+  .tabs a.active {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  .hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 1.5rem 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .hero .value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .hero .caption {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .bar-row { margin-bottom: 1rem; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-row .meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+  }
+  .bar-row .meta .app { color: var(--ink); }
+  .bar-row .meta .time { color: var(--ink-secondary); font-weight: 600; }
+
+  .track {
+    position: relative;
+    height: 10px;
+    background: var(--gridline);
+    border-radius: 0 4px 4px 0;
+    border-left: 2px solid var(--baseline);
+  }
+  .fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: var(--accent);
+    border-radius: 0 4px 4px 0;
+    min-width: 4px;
+  }
+
+  [data-tooltip] { position: relative; cursor: default; }
+  [data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    transform: translateY(-6px);
+    background: #000000;
+    color: var(--ink);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  .empty {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+    padding: 1rem 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+    font-size: 0.85rem;
+  }
+  table caption {
+    text-align: left;
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--gridline);
+    color: var(--ink-secondary);
+  }
+  th { color: var(--ink-muted); font-weight: 500; }
+  td.time { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+  th.time { text-align: right; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Screen Time</h1>
+    <nav class="tabs">
+      <a href="/" class="{{ 'active' if active == 'today' else '' }}">Today</a>
+      <a href="/week" class="{{ 'active' if active == 'week' else '' }}">Last 7 days</a>
+    </nav>
+
+    <div class="hero">
+      <div class="value">{{ total_label }}</div>
+      <div class="caption">Total screen time — {{ title }}</div>
+    </div>
+
+    <div class="card">
+      {% if bars %}
+        {% for bar in bars %}
+        <div class="bar-row">
+          <div class="meta">
+            <span class="app">{{ bar.app }}</span>
+            <span class="time">{{ bar.label }}</span>
+          </div>
+          <div class="track" data-tooltip="{{ bar.exact }}">
+            <div class="fill" style="width: {{ bar.pct }}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">No activity recorded yet. Make sure the tracker service is running.</div>
+      {% endif %}
+    </div>
+
+    {% if bars %}
+    <table>
+      <caption>Exact breakdown</caption>
+      <thead>
+        <tr><th>App</th><th class="time">Time</th></tr>
+      </thead>
+      <tbody>
+        {% for bar in bars %}
+        <tr><td>{{ bar.app }}</td><td class="time">{{ bar.exact }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</body>
+</html>

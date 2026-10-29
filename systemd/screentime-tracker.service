@@ -1,0 +1,11 @@
+[Unit]
+Description=Screen time tracker daemon
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/python3 %h/screentime/tracker.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
